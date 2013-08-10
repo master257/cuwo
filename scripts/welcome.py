@@ -19,19 +19,23 @@
 Sends a welcome message to players
 """
 
-from cuwo.script import ServerScript
+from cuwo.script import ServerScript, ConnectionScript
 from twisted.internet import reactor
+
+class LoginNotice(ConnectionScript):
+    def on_join(self, event):
+        config = self.server.config.base
+        welcome = self.server.format_lines(config.welcome)
+        self.connection.send_lines(welcome)
+        self.server.send_chat("%s has connected." % (self.connection.name))
+
+    def on_unload(self):
+        if not (self.connection.name is None):
+            self.server.send_chat("%s has disconnected." % (self.connection.name)) 
 
 
 class WelcomeServer(ServerScript):
-    connection_class = None
-
-    def on_load(self):
-        config = self.server.config.base
-        self.welcome = self.server.format_lines(config.welcome)
-
-    def on_new_connection(self, event):
-        reactor.callLater(10, event.connection.send_lines, self.welcome)
+    connection_class = LoginNotice
 
 
 def get_class():
