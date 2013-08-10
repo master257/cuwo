@@ -28,9 +28,10 @@ user = 'username'
 db = 'database'
 
 class DbHandler(ConnectionScript):
+    def on_join(self, event):
+        self.pl_exists(self.connection.name)
         
     def on_kill(self, event):
-        self.pl_exists(event.target.name)
         self.cur = self.open_con().cursor()
         self.cur.execute("UPDATE kill_keeper SET kill_count = kill_count+1 WHERE player = %s",(self.connection.name))
         self.cur.execute("UPDATE kill_keeper SET death_count = death_count+1 WHERE player = %s",(event.target.name))
@@ -47,17 +48,13 @@ class DbHandler(ConnectionScript):
         if self.con:
             self.con.close()
     
-    def pl_exists(self, enemy):
-        self.cur = self.open_con().cursor()
-        if enemy is not None:
-            self.cur.execute("SELECT * FROM kill_keeper WHERE player = %s",(enemy))
+    def pl_exists(self, player):
+        if player is not None:
+            self.cur = self.open_con().cursor()
+            self.cur.execute("SELECT * FROM kill_keeper WHERE player = %s",(player))
             if self.cur.rowcount == 0:
-                self.cur.execute("INSERT INTO kill_keeper(player,kill_count,death_count) VALUES(%s,'0','0')",(enemy))
-                
-        self.cur.execute("SELECT * FROM kill_keeper WHERE player = %s",(self.connection.name))
-        if self.cur.rowcount == 0:
-            self.cur.execute("INSERT INTO kill_keeper(player,kill_count,death_count) VALUES(%s,'0','0')",(self.connection.name))
-        self.close_con()
+                self.cur.execute("INSERT INTO kill_keeper(player,kill_count,death_count) VALUES(%s,'0','0')",(player))
+            self.close_con()
 
 class DbHandle(ServerScript):
     connection_class = DbHandler
